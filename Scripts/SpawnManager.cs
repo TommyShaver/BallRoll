@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
-    public GameObject enemeyPrefab;
-    public GameObject pUpPrefab;
+    public GameObject[] enemeyPrefab;
+    public GameObject[] pUpPrefab;
     public int enemyCount;
     public int waveNumber = 1;
     private float spawnRange = 9.0f;
@@ -15,6 +15,7 @@ public class SpawnManager : MonoBehaviour
     {
         SpawnEnmeyWave(waveNumber);
         PowerUpSpawn();
+        
     }
 
     // Update is called once per frame
@@ -35,7 +36,8 @@ public class SpawnManager : MonoBehaviour
         //Spawn enemeys over time. 
         for(int i = 0; i < enemiesToSpawn; i++)
         {
-            Instantiate(enemeyPrefab, GenerateSpawnPostion(), enemeyPrefab.transform.rotation);
+            int enemyIndex = Random.Range(0, enemeyPrefab.Length);
+            Instantiate(enemeyPrefab[enemyIndex], GenerateSpawnPostion(), enemeyPrefab[enemyIndex].transform.rotation);
         }    
     }
 
@@ -51,6 +53,7 @@ public class SpawnManager : MonoBehaviour
 
     void PowerUpSpawn()
     {
-        Instantiate(pUpPrefab, GenerateSpawnPostion(), pUpPrefab.transform.rotation);
+        int powerUpIndex = Random.Range(0, pUpPrefab.Length);
+        Instantiate(pUpPrefab[powerUpIndex], GenerateSpawnPostion(), pUpPrefab[powerUpIndex].transform.rotation);
     }
 }

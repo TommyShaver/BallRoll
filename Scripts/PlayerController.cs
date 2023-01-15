@@ -6,10 +6,16 @@ public class PlayerController : MonoBehaviour
 {
     private Rigidbody playerRD;
     private GameObject focalPoint;
+
     private float powerUpStreght = 15.0f;
+
     public float speed = 5.0f;
     public bool hasPowerUp = false;
-    public GameObject powerUpIndcator; 
+    public bool hasHomingMissile = false;
+
+    public GameObject powerUpIndcator;
+    public GameObject powerUpMissile;
+    public GameObject missilePrefab;
 
     Coroutine powerUpTimer;
 
@@ -27,6 +33,12 @@ public class PlayerController : MonoBehaviour
         float forwardInput = Input.GetAxis("Vertical");
         playerRD.AddForce(focalPoint.transform.forward * speed * forwardInput);
         powerUpIndcator.transform.position = transform.position + new Vector3(0, -0.5f, 0);
+        powerUpMissile.transform.position = transform.position + new Vector3(0, -0.5f, 0);
+        if(Input.GetKeyDown(KeyCode.F) && hasHomingMissile == true)
+        {
+            Instantiate(missilePrefab, transform.position, missilePrefab.transform.rotation);
+            Debug.Log("Fire");
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -37,6 +49,13 @@ public class PlayerController : MonoBehaviour
             hasPowerUp = true;
             powerUpTimer = StartCoroutine(timer(7));
             powerUpIndcator.gameObject.SetActive(true);
+        }
+        if (other.CompareTag("Power_Missile"))
+        {
+            Destroy(other.gameObject);
+            hasHomingMissile = true;
+            powerUpTimer = StartCoroutine(timer(7));
+            powerUpMissile.gameObject.SetActive(true);
         }
     }
 
@@ -68,7 +87,9 @@ public class PlayerController : MonoBehaviour
         }
         Debug.Log("Finished");
         hasPowerUp = false;
+        hasHomingMissile = false;
         powerUpIndcator.gameObject.SetActive(false);
+        powerUpMissile.gameObject.SetActive(false);
     }
 
 }
