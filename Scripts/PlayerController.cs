@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+
+    //=======================================
     private Rigidbody playerRD;
     private GameObject focalPoint;
 
@@ -13,32 +15,55 @@ public class PlayerController : MonoBehaviour
     public bool hasPowerUp = false;
     public bool hasHomingMissile = false;
 
+
+    //=======================================
     public GameObject powerUpIndcator;
     public GameObject powerUpMissile;
-    public GameObject missilePrefab;
-
+    
     Coroutine powerUpTimer;
+    
+
+    //=======================================
+    public PowerUpType currentPowerUp = PowerUpType.None;
+    public GameObject rocketPrefab;
+    private GameObject tmpRocket;
+    private Coroutine powerupCountdown;
+
+    //======================================
+    public float hangTime;
+    public float smashSpeed;
+    public float explosionForce;
+    public float explosionRadius;
+    private Coroutine smashingBall;
+
+    bool smashing = false;
+    float floorY;
 
     // Start is called before the first frame update
     void Start()
     {
         playerRD = GetComponent<Rigidbody>();
         focalPoint = GameObject.Find("FocalPoint");
+        
+        
     }
 
     // Update is called once per frame
-    void Update()
+    public void Update()
     {
+        
         // This is to change to the transform postion of player based on other game objects postion.
         float forwardInput = Input.GetAxis("Vertical");
         playerRD.AddForce(focalPoint.transform.forward * speed * forwardInput);
         powerUpIndcator.transform.position = transform.position + new Vector3(0, -0.5f, 0);
         powerUpMissile.transform.position = transform.position + new Vector3(0, -0.5f, 0);
-        if(Input.GetKeyDown(KeyCode.F) && hasHomingMissile == true)
+        if (currentPowerUp == PowerUpType.Rockets && Input.GetKeyDown(KeyCode.F))
         {
-            Instantiate(missilePrefab, transform.position, missilePrefab.transform.rotation);
-            Debug.Log("Fire");
+            LaunchRockets();
         }
+
+      
+
     }
 
     private void OnTriggerEnter(Collider other)
@@ -47,6 +72,7 @@ public class PlayerController : MonoBehaviour
         {
             Destroy(other.gameObject);
             hasPowerUp = true;
+            currentPowerUp = other.gameObject.GetComponent<PowerUp>().powerUpType;
             powerUpTimer = StartCoroutine(timer(7));
             powerUpIndcator.gameObject.SetActive(true);
         }
@@ -54,8 +80,13 @@ public class PlayerController : MonoBehaviour
         {
             Destroy(other.gameObject);
             hasHomingMissile = true;
-            powerUpTimer = StartCoroutine(timer(7));
+            currentPowerUp = other.gameObject.GetComponent<PowerUp>().powerUpType;
             powerUpMissile.gameObject.SetActive(true);
+            if(powerupCountdown != null)
+            {
+                StopCoroutine(powerupCountdown);
+            }
+            powerupCountdown = StartCoroutine(PowerupCountdownRoutine());
         }
     }
 
@@ -64,15 +95,23 @@ public class PlayerController : MonoBehaviour
     {
         //How to apply power ups and in the form of force. 
 
-        if(collision.gameObject.CompareTag("Enemy") && hasPowerUp)
+        if(collision.gameObject.CompareTag("Enemy") && currentPowerUp == PowerUpType.Pushback)
         {
             Rigidbody enemyRD = collision.gameObject.GetComponent<Rigidbody>();
             Vector3 awayFromPlayer = collision.gameObject.transform.position - transform.position;
 
             enemyRD.AddForce(awayFromPlayer * powerUpStreght, ForceMode.Impulse);
-            //Debug.Log("Hit " + collision.gameObject.name + " with power up set to " + hasPowerUp);
-            
+            Debug.Log("Plyer collided with: " + collision.gameObject.name + " with powerup set to " + currentPowerUp.ToString());
         }
+    }
+    void LaunchRockets()
+    {
+        foreach(var enemy in FindObjectsOfType<Enemy>())
+        {
+            tmpRocket = Instantiate(rocketPrefab, transform.position + Vector3.up, Quaternion.identity);
+            tmpRocket.GetComponent<RocketBhaviour>().Fire(enemy.transform);
+        }
+
     }
 
     //The proper way to set this frustaing method up. 
@@ -87,9 +126,40 @@ public class PlayerController : MonoBehaviour
         }
         Debug.Log("Finished");
         hasPowerUp = false;
-        hasHomingMissile = false;
         powerUpIndcator.gameObject.SetActive(false);
+        
+    }
+    IEnumerator PowerupCountdownRoutine()
+    {
+        yield return new WaitForSeconds(7);
+        hasHomingMissile = false;
+        currentPowerUp = PowerUpType.None;
         powerUpMissile.gameObject.SetActive(false);
     }
 
+    IEnumerable Smash()
+    {
+        var enemies = FindObjectsOfType<Enemy>();
+
+        floorY = transform.position.y;
+        float jumpTime = Time.time + hangTime;
+        while(Time.time < jumpTime)
+        {
+            playerRD.velocity = new Vector2(playerRD.velocity.x, smashSpeed);
+            yield return null;
+        }
+        while (transform.position.y > floorY)
+        {
+            playerRD.velocity = new Vector2(playerRD.velocity.x, -smashSpeed * 2);
+            yield return null;
+        }
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            if(enemies[i] !=null)
+            {
+                enemies[i].GetComponent<Rigidbody>().AddExplosionForce(explosionForce, transform.position, explosionRadius, 0.0f, ForceMode.Impulse);
+            }
+            smashing = false;
+        }
+    }
 }

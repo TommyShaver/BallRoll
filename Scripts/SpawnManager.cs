@@ -9,6 +9,10 @@ public class SpawnManager : MonoBehaviour
     public int enemyCount;
     public int waveNumber = 1;
     private float spawnRange = 9.0f;
+
+    
+
+   
     
     // Start is called before the first frame update
     void Start()
@@ -31,7 +35,7 @@ public class SpawnManager : MonoBehaviour
         }
     }
 
-    void SpawnEnmeyWave(int enemiesToSpawn)
+    public void SpawnEnmeyWave(int enemiesToSpawn)
     {
         //Spawn enemeys over time. 
         for(int i = 0; i < enemiesToSpawn; i++)
